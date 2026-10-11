@@ -1,0 +1,15 @@
+import "IEcoBase1.idl"; 
+
+typedef double_t (*EcoIntegrandD)([in] double_t x, [in] voidptr_t context);
+typedef float_t (*EcoIntegrandF)([in] float_t x, [in] voidptr_t context);
+typedef long double (*EcoIntegrandL)([in] long double x, [in] voidptr_t context);
+
+[
+    uuid(667182A3-5F5C-4F90-9244-C763139ED855)
+]
+interface IEcoAdvancedMath : IEcoUnknown {
+
+    int16_t integral([in] EcoIntegrandD function, [in] voidptr_t context, [in] double_t a, [in] double_t b, [in] double_t epsabs, [in] double_t epsrel, [out] double_t* result, [out] double_t* error);
+    int16_t integralf([in] EcoIntegrandF function, [in] voidptr_t context, [in] float_t a, [in] float_t b, [in] float_t epsabs, [in] float_t epsrel, [out] float_t* result, [out] float_t* error);
+    int16_t integrall([in] EcoIntegrandL function, [in] voidptr_t context, [in] long double a, [in] long double b, [in] long double epsabs, [in] long double epsrel, [out] long double* result, [out] long double* error);
+};
