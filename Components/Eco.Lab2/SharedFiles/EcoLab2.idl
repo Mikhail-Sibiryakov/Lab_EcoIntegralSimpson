@@ -1,0 +1,7 @@
+import "IEcoBase1.idl";
+[
+    uuid(F0DFF109-2767-4C68-87E1-A3228E910B28)
+]
+interface IEcoLab2 : IEcoUnknown {
+    int16_t Calculate([in] uint16_t operation, [in] int16_t a, [in] int16_t b, [out] int32_t* result);
+};

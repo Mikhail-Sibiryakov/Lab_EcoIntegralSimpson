@@ -1,3 +1,21 @@
+# Build output; retain empty Wizard directories in component projects.
 /BuildFiles/
+**/BuildFiles/*
+!**/BuildFiles/.gitkeep
 __pycache__/
 *.pyc
+
+# Report sources and intermediate files stay local; root PDFs are versioned.
+/report/
+
+# Local instructions, reference materials and agent state.
+AGENTS.md
+/Eco.AI.Promts/
+/docs/
+/.agents/
+/.codex/
+/.superpowers/
+/.aws/
+
+# Generated source-comparison manifest.
+/DependenciesFiles/InsideACOM/manifest.json
