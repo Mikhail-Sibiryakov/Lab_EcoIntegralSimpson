@@ -1,3 +1,91 @@
+# Лабораторная работа №2 — включение и агрегирование ACOM
+
+Автор: Михаил Сибиряков, группа 24ТИДИ.
+
+## EcoIntegralSimpson и EcoLab2
+
+Компонент первой работы дополнен арифметическими интерфейсами и поддержкой
+агрегирования. Создан внешний компонент EcoLab2:
+
+- EcoIntegralSimpson включает калькуляторы A и D.
+- EcoLab2 включает C и E, агрегирует EcoIntegralSimpson и предоставляет его интерфейс интегрирования.
+- Внутри D используется включение B, внутри E — агрегирование отдельного B.
+
+`IEcoCalculatorX` предоставляет сложение и вычитание, `IEcoCalculatorY` —
+умножение и деление. Новый `IEcoLab2` содержит метод `Calculate` для четырёх операций.
+Алгоритм Симпсона и публичный `IEcoAdvancedMath` первой работы сохранены.
+
+## Структура проекта
+
+~~~text
+Components/
+├── EcoIntegralSimpson/           # компонент первой работы с доработками
+└── Eco.Lab2/                     # новый внешний компонент
+DependenciesFiles/InsideACOM/     # учебные калькуляторы A–E
+UnitTestFiles/                   # клиент второй работы и общие проверки
+AssemblyFiles/                   # общая сборка
+BuildFiles/                      # библиотеки, клиенты и журналы проверок
+~~~
+
+В каждом компоненте `SourceFiles` содержит реализацию, `HeaderFiles` — внутренние
+структуры, `SharedFiles` — публичные интерфейсы и идентификаторы, `AssemblyFiles` —
+файлы сборки. Прежний тестовый клиент находится в
+[проекте интегратора](Components/EcoIntegralSimpson/UnitTestFiles/SourceFiles/EcoIntegralSimpson.c).
+
+## Что изменено во второй работе
+
+| Файлы | Назначение изменений |
+|---|---|
+| [CEcoIntegralSimpson.c](Components/EcoIntegralSimpson/SourceFiles/CEcoIntegralSimpson.c), [CEcoIntegralSimpson.h](Components/EcoIntegralSimpson/HeaderFiles/CEcoIntegralSimpson.h) | Доработаны: включение A/D, интерфейсы X/Y и поддержка агрегирования. |
+| [CEcoIntegralSimpsonFactory.c](Components/EcoIntegralSimpson/SourceFiles/CEcoIntegralSimpsonFactory.c) | Доработана фабрика: создание интегратора с внешним управляющим Unknown. |
+| [CEcoLab2.c](Components/Eco.Lab2/SourceFiles/CEcoLab2.c), [CEcoLab2Factory.c](Components/Eco.Lab2/SourceFiles/CEcoLab2Factory.c) | Новые: внешний компонент с C/E, агрегированным интегратором и методом Calculate. |
+| [IEcoLab2.h](Components/Eco.Lab2/SharedFiles/IEcoLab2.h) | Новый публичный интерфейс Calculate. |
+| [EcoLab2.c](UnitTestFiles/SourceFiles/EcoLab2.c) | Новый UnitTest: арифметика компонентов, B через D/E, переходы интерфейсов и время жизни агрегата. |
+| [Lab2TestRegistration.c](UnitTestFiles/SourceFiles/Lab2TestRegistration.c) | Новый вспомогательный файл: регистрация фабрик A–E для обоих клиентов. |
+| [DependenciesFiles/InsideACOM](DependenciesFiles/InsideACOM/) | Добавлены копии учебных A–E.
+
+[EcoLab2_Report.pdf](EcoLab2_Report.pdf) — отчёт с описанием схемы, реализации и результатов.
+
+## Сборка и тестирование
+
+Нужны Linux x86_64, Eco.Framework в `~/Dev/Eco.Framework` и Eco toolchain
+в `~/Dev/toolchain`. Для полной проверки также нужны Python 3, mpmath и binutils.
+
+Из корня проекта:
+
+~~~bash
+./AssemblyFiles/Linux/gcc_v132/build.sh lab2-test
+~~~
+
+Команда собирает компоненты и запускает клиент второй лабораторной.
+Успешный результат:
+
+~~~text
+MATRIX PAIRS 41
+SUMMARY PASS passed=97 failed=0
+~~~
+
+Клиент содержит пять сценариев. Число 97 — количество проверяемых условий,
+включая 41 переход между интерфейсами двух собственных компонентов.
+Полный вывод клиента: `./AssemblyFiles/Linux/gcc_v132/build.sh lab2-run`.
+
+Полная проверка обеих работ:
+
+~~~bash
+./AssemblyFiles/Linux/gcc_v132/build.sh verify
+~~~
+
+Дополнительно выполняются 135 прежних проверок интегратора, 30 сравнений
+с mpmath и проверка отсутствия вызовов libc в собственном коде.
+
+## Подтверждение запуска
+
+Вывод полной проверки командой `build.sh verify`:
+
+![Результаты проверки второй лабораторной и интегратора](evidence2.png)
+
+---
+
 # Лабораторная работа №1 — задание 35
 
 Автор: Михаил Сибиряков, группа 24ТИДИ.
@@ -15,12 +103,12 @@
 
 ## Структура проекта
 
-- [SharedFiles/IEcoAdvancedMath.h](SharedFiles/IEcoAdvancedMath.h) — публичный интерфейс интегрирования.
-- [SourceFiles/CEcoIntegralSimpson.c](SourceFiles/CEcoIntegralSimpson.c) — реализация компонента и алгоритма.
-- [SourceFiles/CEcoIntegralSimpsonFactory.c](SourceFiles/CEcoIntegralSimpsonFactory.c) — фабрика ACOM.
-- [UnitTestFiles/SourceFiles/EcoIntegralSimpson.c](UnitTestFiles/SourceFiles/EcoIntegralSimpson.c) — консольный тестовый клиент.
+- [SharedFiles/IEcoAdvancedMath.h](Components/EcoIntegralSimpson/SharedFiles/IEcoAdvancedMath.h) — публичный интерфейс интегрирования.
+- [SourceFiles/CEcoIntegralSimpson.c](Components/EcoIntegralSimpson/SourceFiles/CEcoIntegralSimpson.c) — реализация компонента и алгоритма.
+- [SourceFiles/CEcoIntegralSimpsonFactory.c](Components/EcoIntegralSimpson/SourceFiles/CEcoIntegralSimpsonFactory.c) — фабрика ACOM.
+- [UnitTestFiles/SourceFiles/EcoIntegralSimpson.c](Components/EcoIntegralSimpson/UnitTestFiles/SourceFiles/EcoIntegralSimpson.c) — консольный тестовый клиент.
 - [UnitTestFiles/compare_reference.py](UnitTestFiles/compare_reference.py) — независимое сравнение с mpmath.
-- [AssemblyFiles/Linux/gcc_v132/](AssemblyFiles/Linux/gcc_v132/) — Makefile, скрипт сборки и конфигурация VS Code.
+- [AssemblyFiles/Linux/gcc_v132/](Components/EcoIntegralSimpson/AssemblyFiles/Linux/gcc_v132/) — Makefile, скрипт сборки и конфигурация VS Code.
 - [EcoLab1_Report.pdf](EcoLab1_Report.pdf) — отчёт с описанием метода, тестами и сравнительными таблицами.
 
 ## Сборка и тестирование
