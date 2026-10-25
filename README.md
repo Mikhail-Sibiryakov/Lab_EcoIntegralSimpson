@@ -1,89 +1,50 @@
-# Лабораторная работа №1 — задание 35
+# Лабораторная работа №2 — включение и агрегирование ACOM
 
-Автор: Михаил Сибиряков, группа 24ТИДИ.
+Михаил Сибиряков, группа 24ТИДИ.
 
-## EcoIntegralSimpson
+Целевой объём — 9–10 баллов: использование калькуляторов A–E, поддержка
+агрегирования компонента первой работы и новый внешний Eco.Lab2.
+Подготовлены отдельная ветка `lab2-aggregation` и контекст разработки.
+Текущий C-код пока соответствует проверенной базе первой лабораторной.
 
-Компонент ACOM для вычисления определённого интеграла адаптивным методом
-Симпсона. Реализован на языке C89 в структуре проекта, созданного Eco Wizard.
+Начало работы и передача контекста новому диалогу Codex:
+[PREPARATION.md](docs/lab2/PREPARATION.md).
 
-Интерфейс `IEcoAdvancedMath` содержит методы `integral`, `integralf`
-и `integrall` для `double_t`, `float_t` и `long double` соответственно.
-Подынтегральная функция передаётся как callback с необязательным контекстом.
-Методы возвращают код статуса, а результат и оценку абсолютной погрешности
-записывают в выходные параметры.
+- [AGENTS.md](AGENTS.md) — рабочие инструкции.
+- [Условие и критерии](docs/lab2/TASK.md).
+- [Проектные решения](docs/lab2/DESIGN.md).
+- [Источники InsideACOM](docs/lab2/REFERENCES.md).
+- [Лекции 1–3](docs/course/LECTURES_01_03.md).
+- [Лекция 4](docs/course/LECTURE_04.md).
 
-## Структура проекта
+## Сборка и проверка базы
 
-- [SharedFiles/IEcoAdvancedMath.h](SharedFiles/IEcoAdvancedMath.h) — публичный интерфейс интегрирования.
-- [SourceFiles/CEcoIntegralSimpson.c](SourceFiles/CEcoIntegralSimpson.c) — реализация компонента и алгоритма.
-- [SourceFiles/CEcoIntegralSimpsonFactory.c](SourceFiles/CEcoIntegralSimpsonFactory.c) — фабрика ACOM.
-- [UnitTestFiles/SourceFiles/EcoIntegralSimpson.c](UnitTestFiles/SourceFiles/EcoIntegralSimpson.c) — консольный тестовый клиент.
-- [UnitTestFiles/compare_reference.py](UnitTestFiles/compare_reference.py) — независимое сравнение с mpmath.
-- [AssemblyFiles/Linux/gcc_v132/](AssemblyFiles/Linux/gcc_v132/) — Makefile, скрипт сборки и конфигурация VS Code.
-- [EcoLab1_Report.pdf](EcoLab1_Report.pdf) — отчёт с описанием метода, тестами и сравнительными таблицами.
+Нужны Linux x86_64, Eco.Framework в `~/Dev/Eco.Framework`,
+toolchain в `~/Dev/toolchain`, Python 3, mpmath и binutils.
+Пути SDK и инструментов можно задать переменными ECO_FRAMEWORK и ECO_TOOLCHAIN.
 
-## Сборка и тестирование
-
-Необходимы Linux x86_64, установленный Eco.Framework, Eco GCC 13.2.0,
-GNU make 4.4.1 и binutils.
-Скрипт по умолчанию использует Framework в `~/Dev/Eco.Framework`
-и инструменты в `~/Dev/toolchain`. Для другого расположения можно задать
-переменные `ECO_FRAMEWORK` и `ECO_TOOLCHAIN`.
-
-Из корня проекта:
-
-~~~bash
-./AssemblyFiles/Linux/gcc_v132/build.sh test
-~~~
-
-Команда собирает статическую библиотеку и запускает консольный UnitTest.
-Успешный результат:
-
-~~~text
-SUMMARY PASS passed=135 failed=0
-~~~
-
-Проверяются три числовых типа, известные интегралы, адаптивность,
-абсолютный и относительный допуски, равные и обратные границы,
-неверные входные данные и сохранение выходов при ошибке.
-Клиент регистрирует фабрику, получает компонент через `IEcoInterfaceBus1`
-и вызывает методы `IEcoAdvancedMath`.
-
-Для независимого сравнения нужны Python 3 и библиотека mpmath
-(проверено с версией 1.3.0):
-
-~~~bash
+~~~sh
 ./AssemblyFiles/Linux/gcc_v132/build.sh verify
 ~~~
 
-Помимо UnitTest команда выполняет сравнение с mpmath, вспомогательные тесты
-скрипта сравнения и проверку собственных объектных файлов на вызовы libc.
-Эталон вычисляется методом tanh-sinh при рабочей точности 50 десятичных знаков.
-На десяти примерах для каждого типа проверяется абсолютная ошибка
-не более `0.5 * 10^(-N)`: N = 4 для `float_t`, 8 для `double_t`,
-10 для `long double`.
+Команда проверяет существующий EcoIntegralSimpson: три числовых типа,
+135 проверок UnitTest, независимое сравнение с mpmath и собственные объекты.
+Проверки механизмов второй лабораторной будут добавляться при реализации.
+Результаты сборки и проверок сохраняются в игнорируемом `BuildFiles/`.
 
-~~~text
-Reference comparison: 30/30 passed
-~~~
+## Учебные материалы
 
-Результаты сборки находятся в `BuildFiles/Linux/x86_64/StaticRelease/`:
-статическая библиотека `.a` и исполняемый клиент `EcoIntegralSimpson`.
-Протокол тестов, CSV-таблица и сводка сравнения создаются в
-`BuildFiles/verification/`. Результаты сборки и кеш Python исключены
-из Git через `.gitignore`.
+Клон преподавателя расположен рядом: `../Eco.Education`.
+Зафиксированная версия и нужные уроки перечислены в REFERENCES.md.
+Исходники калькуляторов требуют проверки и адаптации к текущей C89-сборке;
+изменять исходный клон и SDK для этого не следует.
 
-Для очистки результатов сборки:
+## Первая работа и отчёты
 
-~~~bash
-./AssemblyFiles/Linux/gcc_v132/build.sh clean
-~~~
+Тег `lab1-final` сохраняет первую версию компонента.
+[EcoLab1_Report.pdf](EcoLab1_Report.pdf) — отчёт первой лабораторной.
+[Скриншот исходной проверки](evidence.png) также относится к первой работе.
 
-## Подтверждение запуска
-
-Для демонстрации используется вывод команды `build.sh verify`:
-итог UnitTest `SUMMARY PASS passed=135 failed=0` и результат сравнения
-`Reference comparison: 30/30 passed`.
-
-![Результаты UnitTest и независимого сравнения с mpmath](evidence.png)
+Отчёт второй лабораторной будет подготовлен в LaTeX:
+исходники `report/lab2/`, итоговый `EcoLab2_Report.pdf` в корне.
+До реализации второй работы этот PDF не создаётся.

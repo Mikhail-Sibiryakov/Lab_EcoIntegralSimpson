@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-25",
+  "purpose": "Compile-only check of unmodified teaching sources, not link/runtime validation",
+  "education_commit": "7f1664b0489bcea6d5b211807ea5cb0ce0e1068e",
+  "flags": [
+    "-std=c89",
+    "-Wall",
+    "-Wextra",
+    "-fno-builtin",
+    "-fno-fast-math",
+    "-DECO_LIB",
+    "-DECO_LINUX",
+    "-DECO_X86_64",
+    "-DUGUID_UTILITY"
+  ],
+  "checks": [
+    {
+      "source": "Lesson02/Eco.CalculatorA/SourceFiles/CEcoCalculatorA.c",
+      "exit_code": 1,
+      "warnings": 4,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?"
+      ]
+    },
+    {
+      "source": "Lesson02/Eco.CalculatorA/SourceFiles/CEcoCalculatorAFactory.c",
+      "exit_code": 1,
+      "warnings": 1,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?",
+        "C++ style comments are not allowed in ISO C90"
+      ]
+    },
+    {
+      "source": "Lesson03/Eco.CalculatorB/SourceFiles/CEcoCalculatorB.c",
+      "exit_code": 1,
+      "warnings": 4,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?"
+      ]
+    },
+    {
+      "source": "Lesson03/Eco.CalculatorB/SourceFiles/CEcoCalculatorBFactory.c",
+      "exit_code": 1,
+      "warnings": 1,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?",
+        "C++ style comments are not allowed in ISO C90"
+      ]
+    },
+    {
+      "source": "Lesson05/Eco.CalculatorC/SourceFiles/CEcoCalculatorC.c",
+      "exit_code": 1,
+      "warnings": 5,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?"
+      ]
+    },
+    {
+      "source": "Lesson05/Eco.CalculatorC/SourceFiles/CEcoCalculatorCFactory.c",
+      "exit_code": 1,
+      "warnings": 1,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?",
+        "C++ style comments are not allowed in ISO C90"
+      ]
+    },
+    {
+      "source": "Lesson06/Eco.CalculatorD/SourceFiles/CEcoCalculatorD.c",
+      "exit_code": 1,
+      "warnings": 5,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?"
+      ]
+    },
+    {
+      "source": "Lesson06/Eco.CalculatorD/SourceFiles/CEcoCalculatorDFactory.c",
+      "exit_code": 1,
+      "warnings": 1,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?",
+        "C++ style comments are not allowed in ISO C90"
+      ]
+    },
+    {
+      "source": "Lesson07/Eco.CalculatorE/SourceFiles/CEcoCalculatorE.c",
+      "exit_code": 1,
+      "warnings": 3,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?"
+      ]
+    },
+    {
+      "source": "Lesson07/Eco.CalculatorE/SourceFiles/CEcoCalculatorEFactory.c",
+      "exit_code": 1,
+      "warnings": 1,
+      "errors": [
+        "'ERR_ECO_SUCCESES' undeclared (first use in this function); did you mean 'ERR_ECO_SUCCESS'?",
+        "C++ style comments are not allowed in ISO C90"
+      ]
+    }
+  ]
+}
