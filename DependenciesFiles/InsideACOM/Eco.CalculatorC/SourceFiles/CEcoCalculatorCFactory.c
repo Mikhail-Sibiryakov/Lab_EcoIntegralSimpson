@@ -232,7 +232,7 @@ static char_t* ECOCALLMETHOD CEcoCalculatorCFactory_get_Manufacturer(/* in */ IE
 }
 
 /* Create Virtual Table */
-IEcoComponentFactoryVTbl g_xA77A8179F52342DCA168E9A2FB42C673FactoryVTbl = {
+IEcoComponentFactoryVTbl g_x4828F6552E4540E78121EBD220DC360EFactoryVTbl = {
     CEcoCalculatorCFactory_QueryInterface,
     CEcoCalculatorCFactory_AddRef,
     CEcoCalculatorCFactory_Release,
@@ -254,8 +254,8 @@ IEcoComponentFactoryVTbl g_xA77A8179F52342DCA168E9A2FB42C673FactoryVTbl = {
  * </описание>
  *
  */
-CEcoCalculatorCFactory g_xA77A8179F52342DCA168E9A2FB42C673Factory = {
-    &g_xA77A8179F52342DCA168E9A2FB42C673FactoryVTbl,
+CEcoCalculatorCFactory g_x4828F6552E4540E78121EBD220DC360EFactory = {
+    &g_x4828F6552E4540E78121EBD220DC360EFactoryVTbl,
     0,
     (CreateInstance)createCEcoCalculatorC,
     (InitInstance)initCEcoCalculatorC,
@@ -266,8 +266,8 @@ CEcoCalculatorCFactory g_xA77A8179F52342DCA168E9A2FB42C673Factory = {
 
 #ifdef ECO_DLL
 ECO_EXPORT IEcoComponentFactory* ECOCALLMETHOD GetIEcoComponentFactoryPtr() {
-    return (IEcoComponentFactory*)&g_xA77A8179F52342DCA168E9A2FB42C673Factory;
+    return (IEcoComponentFactory*)&g_x4828F6552E4540E78121EBD220DC360EFactory;
 };
 #elif ECO_LIB
-IEcoComponentFactory* GetIEcoComponentFactoryPtr_A77A8179F52342DCA168E9A2FB42C673 = (IEcoComponentFactory*)&g_xA77A8179F52342DCA168E9A2FB42C673Factory;
+IEcoComponentFactory* GetIEcoComponentFactoryPtr_4828F6552E4540E78121EBD220DC360E = (IEcoComponentFactory*)&g_x4828F6552E4540E78121EBD220DC360EFactory;
 #endif

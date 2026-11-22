@@ -112,7 +112,7 @@ INC = -I "$(ECO_FRAMEWORK)$(SLASH)Eco.Core1$(SLASH)SharedFiles" \
 
 # --- Linker Configuration ---
 INC += $(foreach c,A B C D E,-I $(LAB_ROOT)/DependenciesFiles/InsideACOM/Eco.Calculator$(c)/SharedFiles)
-INC += -I $(LAB_ROOT)/DependenciesFiles/InsideACOM/Compatibility/SharedFiles -I $(LAB_ROOT)/UnitTestFiles/HeaderFiles
+INC += -I $(LAB_ROOT)/UnitTestFiles/HeaderFiles
 LIB_DIR = -L "$(ECO_FRAMEWORK)$(SLASH)Eco.Core1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
 -L "$(ECO_FRAMEWORK)$(SLASH)Eco.InterfaceBus1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
 -L "$(ECO_FRAMEWORK)$(SLASH)Eco.MemoryManager1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \

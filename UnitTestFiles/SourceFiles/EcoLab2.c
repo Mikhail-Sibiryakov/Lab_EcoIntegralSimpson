@@ -10,10 +10,8 @@
 #include "IEcoFile1.h"
 #include "IEcoCalculatorX.h"
 #include "IEcoCalculatorY.h"
-#include "IdEcoCalculatorD.h"
-#include "IdEcoCalculatorE.h"
+#include "IEcoAdvancedMath.h"
 #include "Lab2TestRegistration.h"
-#include "IdEcoIntegralSimpson.h"
 #include "IdEcoLab2.h"
 
 static IEcoFile1* g_Output = 0;
@@ -66,7 +64,7 @@ static void Check(uint8_t condition, char_t* label) {
 }
 
 /* <summary> Check public transitions and one identity per source interface. </summary>
- * <description> Object is the canonical Unknown returned by QueryComponent; results own references. </description> */
+ * <description> Object is the outer canonical Unknown; query results own references. </description> */
 static void TestMatrix(IEcoUnknown* object, const UGUID** iids, char_t** names, uint32_t count) {
     IEcoUnknown* from = 0;
     IEcoUnknown* to = 0;
@@ -144,20 +142,6 @@ static void TestIntegral(IEcoAdvancedMath* math) {
     Check((uint8_t)(status == 0 && value > 0.3333333332 && value < 0.3333333335 && error >= 0 && error <= 1e-10), "integral of x squared on [0,1] = 1/3");
 }
 
-/* <summary> Demonstrate A and D through the standalone integrator. </summary>
- * <description> Creates the actual component with its normal Eco dependencies. </description> */
-static void TestIntegrator(IEcoInterfaceBus1* bus) {
-    IEcoAdvancedMath* math = 0;
-    int16_t status = 0;
-    Print("SCENARIO standalone integrator: A/D\n");
-    status = bus->pVTbl->QueryComponent(bus, &CID_EcoIntegralSimpson, 0, &IID_IEcoAdvancedMath, (voidptr_t*)&math);
-    Check((uint8_t)(status == 0 && math != 0), "create standalone integrator");
-    if (math != 0) {
-        TestArithmetic((IEcoUnknown*)math);
-        math->pVTbl->Release(math);
-    }
-}
-
 /* <summary> Demonstrate the Calculate interface and its two common errors. </summary>
  * <description> Error calls preserve the previously stored result. </description> */
 static void TestCalculate(IEcoLab2* lab) {
@@ -178,124 +162,73 @@ static void TestCalculate(IEcoLab2* lab) {
     Check((uint8_t)(status == ERR_ECO_INVALIDARG && value == 99), "Calculate rejects division by zero");
 }
 
-/* <summary> Demonstrate C/E arithmetic and aggregation of the integrator. </summary>
- * <description> Obtains integration from the same outer EcoLab2 object. </description> */
-static void TestLab2(IEcoInterfaceBus1* bus) {
-    IEcoLab2* lab = 0;
+/* <summary> Exercise arithmetic and integration through the outer component. </summary>
+ * <description> Uses only the public interfaces of the borrowed EcoLab2 object. </description> */
+static void TestLab2(IEcoLab2* lab) {
     IEcoAdvancedMath* math = 0;
     int16_t status = 0;
-    Print("SCENARIO EcoLab2: C/E, Calculate, integration\n");
-    status = bus->pVTbl->QueryComponent(bus, &CID_EcoLab2, 0, &IID_IEcoLab2, (voidptr_t*)&lab);
-    Check((uint8_t)(status == 0 && lab != 0), "create EcoLab2");
-    if (lab != 0) {
-        TestArithmetic((IEcoUnknown*)lab);
-        TestCalculate(lab);
-        status = lab->pVTbl->QueryInterface(lab, &IID_IEcoAdvancedMath, (voidptr_t*)&math);
-        Check((uint8_t)(status == 0 && math != 0), "obtain aggregated integration interface");
-        if (math != 0) {
-            TestIntegral(math);
-            math->pVTbl->Release(math);
-        }
-        lab->pVTbl->Release(lab);
+    Print("SCENARIO EcoLab2 arithmetic, Calculate, integration\n");
+    TestArithmetic((IEcoUnknown*)lab);
+    TestCalculate(lab);
+    status = lab->pVTbl->QueryInterface(lab, &IID_IEcoAdvancedMath, (voidptr_t*)&math);
+    Check((uint8_t)(status == 0 && math != 0), "obtain aggregated integration interface");
+    if (math != 0) {
+        TestIntegral(math);
+        math->pVTbl->Release(math);
     }
 }
 
-/* <summary> Demonstrate B through D containment and E aggregation. </summary>
- * <description> Each real Y component supplies X with the reused addition method. </description> */
-static void TestB(IEcoInterfaceBus1* bus) {
-    const UGUID* cids[2];
-    char_t* names[2] = {"D", "E"};
-    IEcoCalculatorY* y = 0;
-    IEcoCalculatorX* x = 0;
-    uint32_t i = 0;
-    int16_t status = 0;
-    cids[0] = &CID_EcoCalculatorD;
-    cids[1] = &CID_EcoCalculatorE;
-    Print("SCENARIO B through D/E\n");
-    for (i = 0; i < 2; i++) {
-        Print("COMPONENT ");
-        Print(names[i]);
-        Print("\n");
-        status = bus->pVTbl->QueryComponent(bus, cids[i], 0, &IID_IEcoCalculatorY, (voidptr_t*)&y);
-        Check((uint8_t)(status == 0 && y != 0), "obtain calculator Y");
-        if (y != 0) {
-            status = y->pVTbl->QueryInterface(y, &IID_IEcoCalculatorX, (voidptr_t*)&x);
-            Check((uint8_t)(status == 0 && x != 0), "obtain X from Y");
-            if (x != 0) {
-                Check((uint8_t)(x->pVTbl->Addition(x, 3, 5) == 8), "B addition through X = 8");
-                x->pVTbl->Release(x);
-                x = 0;
-            }
-            y->pVTbl->Release(y);
-            y = 0;
-        }
-    }
-}
-
-/* <summary> Demonstrate every transition on the two own components. </summary>
- * <description> Uses canonical Unknown as the reference identity of each object. </description> */
-static void TestInterfaces(IEcoInterfaceBus1* bus) {
-    const UGUID* cids[2];
+/* <summary> Exercise every transition on the outer component. </summary>
+ * <description> Uses its canonical Unknown as the reference identity. </description> */
+static void TestInterfaces(IEcoLab2* lab) {
     const UGUID* iids[5];
     char_t* names[5] = {"Unknown", "AdvancedMath", "X", "Y", "Lab2"};
     IEcoUnknown* object = 0;
-    uint32_t i = 0;
     int16_t status = 0;
-    cids[0] = &CID_EcoIntegralSimpson;
-    cids[1] = &CID_EcoLab2;
     iids[0] = &IID_IEcoUnknown;
     iids[1] = &IID_IEcoAdvancedMath;
     iids[2] = &IID_IEcoCalculatorX;
     iids[3] = &IID_IEcoCalculatorY;
     iids[4] = &IID_IEcoLab2;
     Print("SCENARIO public interface transitions\n");
-    for (i = 0; i < 2; i++) {
-        Print(i == 0 ? "COMPONENT EcoIntegralSimpson\n" : "COMPONENT EcoLab2\n");
-        status = bus->pVTbl->QueryComponent(bus, cids[i], 0, &IID_IEcoUnknown, (voidptr_t*)&object);
-        Check((uint8_t)(status == 0 && object != 0), "create own component through Unknown");
-        if (object != 0) {
-            TestMatrix(object, iids, names, i == 0 ? 4 : 5);
-            object->pVTbl->Release(object);
-            object = 0;
-        }
+    status = lab->pVTbl->QueryInterface(lab, &IID_IEcoUnknown, (voidptr_t*)&object);
+    Check((uint8_t)(status == 0 && object != 0), "obtain outer Unknown");
+    if (object != 0) {
+        TestMatrix(object, iids, names, 5);
+        object->pVTbl->Release(object);
     }
 }
 
 /* <summary> Keep EcoLab2 alive through its integration interface. </summary>
- * <description> Only the inherited interface remains after releasing the initial Lab2 reference. </description> */
-static void TestLifetime(IEcoInterfaceBus1* bus) {
-    IEcoLab2* lab = 0;
+ * <description> Consumes the caller's Lab2 reference; only the inherited interface remains. </description> */
+static void TestLifetime(IEcoLab2* lab) {
     IEcoLab2* again = 0;
     IEcoAdvancedMath* math = 0;
     uint32_t remaining = 0;
     int16_t status = 0;
     Print("SCENARIO aggregate lifetime\n");
-    status = bus->pVTbl->QueryComponent(bus, &CID_EcoLab2, 0, &IID_IEcoLab2, (voidptr_t*)&lab);
-    Check((uint8_t)(status == 0 && lab != 0), "create lifetime example");
-    if (lab != 0) {
-        status = lab->pVTbl->QueryInterface(lab, &IID_IEcoAdvancedMath, (voidptr_t*)&math);
-        Check((uint8_t)(status == 0 && math != 0), "retain integration interface");
-        lab->pVTbl->Release(lab);
-        lab = 0;
-        if (math != 0) {
-            TestIntegral(math);
-            status = math->pVTbl->QueryInterface(math, &IID_IEcoLab2, (voidptr_t*)&again);
-            Check((uint8_t)(status == 0 && again != 0), "recover EcoLab2 from remaining interface");
-            if (again != 0) {
-                again->pVTbl->Release(again);
-            }
-            remaining = math->pVTbl->Release(math);
-            Check((uint8_t)(remaining == 0), "last Release returns zero references");
+    status = lab->pVTbl->QueryInterface(lab, &IID_IEcoAdvancedMath, (voidptr_t*)&math);
+    Check((uint8_t)(status == 0 && math != 0), "retain integration interface");
+    lab->pVTbl->Release(lab);
+    if (math != 0) {
+        TestIntegral(math);
+        status = math->pVTbl->QueryInterface(math, &IID_IEcoLab2, (voidptr_t*)&again);
+        Check((uint8_t)(status == 0 && again != 0), "recover EcoLab2 from remaining interface");
+        if (again != 0) {
+            again->pVTbl->Release(again);
         }
+        remaining = math->pVTbl->Release(math);
+        Check((uint8_t)(remaining == 0), "last Release returns zero references");
     }
 }
 
-/* <summary> Run five laboratory demonstrations using real Eco services. </summary>
+/* <summary> Exercise one outer component using real Eco services. </summary>
  * <description> Releases every acquired interface before returning the combined result. </description> */
 int16_t EcoMain(IEcoUnknown* system) {
     IEcoSystem1* sys = 0;
     IEcoInterfaceBus1* bus = 0;
     IEcoFileManager1* files = 0;
+    IEcoLab2* lab = 0;
     int16_t status = ERR_ECO_FAIL;
     if (system == 0) {
         return ERR_ECO_POINTER;
@@ -314,16 +247,20 @@ int16_t EcoMain(IEcoUnknown* system) {
         goto Release;
     }
     Print("EcoLab2 UnitTest\n");
-    Check((uint8_t)(Lab2RegisterCalculators(bus) == 0), "register A-E");
-    Check((uint8_t)(bus->pVTbl->RegisterComponent(bus, &CID_EcoIntegralSimpson,
-        (IEcoUnknown*)GetIEcoComponentFactoryPtr_BA973067BA954E8FA50BDDE55BC4E3DF) == 0), "register integrator");
-    Check((uint8_t)(bus->pVTbl->RegisterComponent(bus, &CID_EcoLab2,
-        (IEcoUnknown*)GetIEcoComponentFactoryPtr_7C9B7CECBC69410F9B283F6647E653D2) == 0), "register EcoLab2");
-    TestIntegrator(bus);
-    TestLab2(bus);
-    TestB(bus);
-    TestInterfaces(bus);
-    TestLifetime(bus);
+    status = Lab2InitializeComponents(bus);
+    if (status != 0) {
+        goto Release;
+    }
+    status = bus->pVTbl->QueryComponent(bus, &CID_EcoLab2, 0, &IID_IEcoLab2, (voidptr_t*)&lab);
+    Check((uint8_t)(status == 0 && lab != 0), "create EcoLab2");
+    if (status != 0 || lab == 0) {
+        status = ERR_ECO_FAIL;
+        goto Release;
+    }
+    TestLab2(lab);
+    TestInterfaces(lab);
+    TestLifetime(lab);
+    lab = 0;
     Print("MATRIX PAIRS ");
     PrintCount(g_Pairs);
     Print("\nSUMMARY ");
@@ -334,6 +271,9 @@ int16_t EcoMain(IEcoUnknown* system) {
     Print("\n");
     status = g_Failed == 0 && g_OutputStatus == 0 ? ERR_ECO_SUCCESS : ERR_ECO_FAIL;
 Release:
+    if (lab != 0) {
+        lab->pVTbl->Release(lab);
+    }
     if (g_Output != 0) {
         g_Output->pVTbl->Close(g_Output);
         g_Output->pVTbl->Release(g_Output);

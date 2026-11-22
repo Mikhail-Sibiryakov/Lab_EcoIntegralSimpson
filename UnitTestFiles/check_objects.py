@@ -7,7 +7,7 @@ directory = project / 'BuildFiles/Linux/x86_64/StaticRelease'
 expected = {
     'CEcoIntegralSimpson.o', 'CEcoIntegralSimpsonFactory.o', 'EcoIntegralSimpson.o',
     'CEcoLab2.o', 'CEcoLab2Factory.o', 'EcoLab2.o',
-    'Lab2TestRegistration.o',
+    'Lab2TestRegistration.o', 'Lab2TestInitialization.o',
 }
 allowed = {
     'GetIEcoComponentFactoryPtr_BA973067BA954E8FA50BDDE55BC4E3DF',
@@ -16,10 +16,10 @@ allowed = {
     'GetIEcoComponentFactoryPtr_7C9B7CECBC69410F9B283F6647E653D2',
     'GetIEcoComponentFactoryPtr_4828F6552E4540E78121EBD220DC360E',
     'GetIEcoComponentFactoryPtr_AE202E543CE54550899603BD70C62565',
-    'GetIEcoComponentFactoryPtr_A77A8179F52342DCA168E9A2FB42C673',
     'GetIEcoComponentFactoryPtr_3A8E44677E82475CB4A3719ED8397E61',
     'GetIEcoComponentFactoryPtr_872FEF1DE3314B87AD44D1E7C232C2F0',
     'Lab2RegisterCalculators',
+    'Lab2InitializeComponents',
 }
 objects = sorted(directory.glob('*.o'))
 if {path.name for path in objects} != expected:
