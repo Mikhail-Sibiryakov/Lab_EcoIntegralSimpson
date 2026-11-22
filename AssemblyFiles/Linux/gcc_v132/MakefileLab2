@@ -3,17 +3,25 @@ ROOT := $(abspath ../../..)
 INTEGRAL := $(ROOT)/Components/EcoIntegralSimpson
 OUT := $(ROOT)/BuildFiles/Linux/x86_64/StaticRelease
 DEPS := $(ROOT)/DependenciesFiles/InsideACOM
-LETTERS := A B C D E
+CALCULATOR_AC ?= C
+ifneq ($(CALCULATOR_AC),A)
+ifneq ($(CALCULATOR_AC),C)
+$(error CALCULATOR_AC must be A or C)
+endif
+endif
+ALL_LETTERS := A B C D E
+LETTERS := $(CALCULATOR_AC) B D E
 ECO_SDK_INCLUDES := $(foreach c,Eco.Core1 Eco.InterfaceBus1 Eco.MemoryManager1 Eco.FileSystemManagement1 Eco.System1,-I$(ECO_FRAMEWORK)/$(c)/SharedFiles)
-CALC_INCLUDES := $(foreach c,$(LETTERS),-I$(DEPS)/Eco.Calculator$(c)/SharedFiles)
-INCLUDES := -I$(ROOT)/Components/Eco.Lab2/SharedFiles -I$(DEPS)/Compatibility/SharedFiles $(ECO_SDK_INCLUDES) $(CALC_INCLUDES) -I$(INTEGRAL)/SharedFiles -I$(ROOT)/UnitTestFiles/HeaderFiles
+CALC_INCLUDES := $(foreach c,$(ALL_LETTERS),-I$(DEPS)/Eco.Calculator$(c)/SharedFiles)
+INCLUDES := -I$(ROOT)/Components/Eco.Lab2/SharedFiles $(ECO_SDK_INCLUDES) $(CALC_INCLUDES) -I$(INTEGRAL)/SharedFiles -I$(ROOT)/UnitTestFiles/HeaderFiles
 FLAGS := -std=c89 -Wall -Wextra -Werror -Wno-unused-const-variable -fno-builtin -fno-tree-loop-distribute-patterns -fno-strict-aliasing -DECO_LIB -DECO_LINUX -DECO_X86_64 -DUGUID_UTILITY -O2 $(INCLUDES)
 CALC_OBJ := $(foreach c,$(LETTERS),$(OUT)/InsideACOM/CEcoCalculator$(c).o $(OUT)/InsideACOM/CEcoCalculator$(c)Factory.o)
+ALL_CALC_OBJ := $(foreach c,$(ALL_LETTERS),$(OUT)/InsideACOM/CEcoCalculator$(c).o $(OUT)/InsideACOM/CEcoCalculator$(c)Factory.o)
 SDK_LIBDIRS := $(foreach c,Eco.Core1 Eco.InterfaceBus1 Eco.MemoryManager1 Eco.FileSystemManagement1 Eco.System1,-L$(ECO_FRAMEWORK)/$(c)/BuildFiles/Linux/x86_64/StaticRelease)
 SDK_LIBS := -l00000000000000000000000042757331 -l0000000000000000000000004D656D31 -l00000000000000000000000046534D31 -l00000000000000000000000053595333 -lm -lc -lgcc -ldl
 LAB2_OBJ := $(OUT)/CEcoLab2.o $(OUT)/CEcoLab2Factory.o
-TEST_OBJ := $(OUT)/EcoLab2.o $(OUT)/Lab2TestRegistration.o
-.PHONY: all calculators clean
+TEST_OBJ := $(OUT)/EcoLab2.o $(OUT)/Lab2TestRegistration.o $(OUT)/Lab2TestInitialization.o
+.PHONY: all calculators clean FORCE
 all: $(OUT)/EcoLab2UnitTest
 calculators: $(OUT)/libInsideACOM.a
 
@@ -21,14 +29,22 @@ $(CALC_OBJ): $(OUT)/InsideACOM/%.o:
 	@mkdir -p $(@D)
 	$(CC_c) $(FLAGS) -Wno-unused-parameter -Wno-unused-variable -I$(DEPS)/Eco.Calculator$(subst Factory,,$(subst CEcoCalculator,,$*))/HeaderFiles -MMD -MP -c $(DEPS)/Eco.Calculator$(subst Factory,,$(subst CEcoCalculator,,$*))/SourceFiles/$*.c -o $@
 
-$(OUT)/libInsideACOM.a: $(CALC_OBJ)
-	$(AR) rcs $@ $^
+# Recreate the archive so switching A/C cannot retain the other implementation.
+$(OUT)/libInsideACOM.a: $(CALC_OBJ) FORCE
+	rm -f $@
+	$(AR) rcs $@ $(CALC_OBJ)
+
+FORCE:
 
 $(OUT)/EcoLab2.o: $(ROOT)/UnitTestFiles/SourceFiles/EcoLab2.c
 	@mkdir -p $(@D)
 	$(CC_c) $(FLAGS) -MMD -MP -c $< -o $@
 
 $(OUT)/Lab2TestRegistration.o: $(ROOT)/UnitTestFiles/SourceFiles/Lab2TestRegistration.c
+	@mkdir -p $(@D)
+	$(CC_c) $(FLAGS) -MMD -MP -c $< -o $@
+
+$(OUT)/Lab2TestInitialization.o: $(ROOT)/UnitTestFiles/SourceFiles/Lab2TestInitialization.c
 	@mkdir -p $(@D)
 	$(CC_c) $(FLAGS) -MMD -MP -c $< -o $@
 
@@ -43,6 +59,6 @@ $(OUT)/EcoLab2UnitTest: $(TEST_OBJ) $(OUT)/libInsideACOM.a $(OUT)/libBA973067BA9
 	$(CC_c) -o $@ $(TEST_OBJ) -L$(OUT) $(SDK_LIBDIRS) -Wl,--start-group -l7C9B7CECBC69410F9B283F6647E653D2 -lBA973067BA954E8FA50BDDE55BC4E3DF -lInsideACOM $(SDK_LIBS) -Wl,--end-group
 
 clean:
-	rm -f $(CALC_OBJ) $(CALC_OBJ:.o=.d) $(LAB2_OBJ) $(LAB2_OBJ:.o=.d) $(TEST_OBJ) $(TEST_OBJ:.o=.d) $(OUT)/libInsideACOM.a $(OUT)/lib7C9B7CECBC69410F9B283F6647E653D2.a $(OUT)/EcoLab2UnitTest
+	rm -f $(ALL_CALC_OBJ) $(ALL_CALC_OBJ:.o=.d) $(LAB2_OBJ) $(LAB2_OBJ:.o=.d) $(TEST_OBJ) $(TEST_OBJ:.o=.d) $(OUT)/libInsideACOM.a $(OUT)/lib7C9B7CECBC69410F9B283F6647E653D2.a $(OUT)/EcoLab2UnitTest
 
 -include $(CALC_OBJ:.o=.d) $(LAB2_OBJ:.o=.d) $(TEST_OBJ:.o=.d)

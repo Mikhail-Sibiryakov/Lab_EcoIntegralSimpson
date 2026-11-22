@@ -10,6 +10,10 @@
 #include "CEcoIntegralSimpson.h"
 #include "IdEcoCalculatorA.h"
 #include "IdEcoCalculatorD.h"
+#include "CEcoIntegralSimpsonConnectionPoint.h"
+#include "CEcoIntegralSimpsonEnumConnectionPoints.h"
+#include "IEcoEnumConnections.h"
+#include "IEcoIntegralSimpsonEvents.h"
 /* <summary> Query an object interface. </summary>
  * <description> Returns an owned reference; clears out on failure. </description> */
 static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_QueryInterface(IEcoAdvancedMathPtr_t me, const UGUID* iid, voidptr_t* out) {
@@ -69,6 +73,9 @@ static int16_t ECOCALLMETHOD SimpsonNDQuery(IEcoUnknown* me, const UGUID* iid, v
     }
     else if (IsEqualUGUID(iid, &IID_IEcoCalculatorY)) {
         *out = &object->m_y;
+    }
+    else if (IsEqualUGUID(iid, &IID_IEcoConnectionPointContainer)) {
+        *out = &object->m_container;
     }
     else {
         return ERR_ECO_NOINTERFACE;
@@ -207,6 +214,125 @@ static int16_t ECOCALLMETHOD SimpsonDivision(IEcoCalculatorY* me, int16_t a, int
     return object->m_pIY->pVTbl->Division(object->m_pIY, a, b);
 }
 
+/* <summary> Query through the public connection container. </summary>
+ * <description> Preserves the controlling Unknown and aggregation identity. </description> */
+static int16_t ECOCALLMETHOD SimpsonContainerQuery(IEcoConnectionPointContainer* me, const UGUID* iid, voidptr_t* out) {
+    if (me == 0) {
+        if (out != 0) {
+            *out = 0;
+        }
+        return ERR_ECO_POINTER;
+    }
+    return CEcoIntegralSimpson_5BC4E3DF_QueryInterface((IEcoAdvancedMath*)((SimpsonContainerSlot*)me)->owner, iid, out);
+}
+
+/* <summary> Retain the controller through the container. </summary>
+ * <description> The container has no independent reference count. </description> */
+static uint32_t ECOCALLMETHOD SimpsonContainerAddRef(IEcoConnectionPointContainer* me) {
+    if (me == 0) {
+        return (uint32_t)ERR_ECO_POINTER;
+    }
+    return CEcoIntegralSimpson_5BC4E3DF_AddRef((IEcoAdvancedMath*)((SimpsonContainerSlot*)me)->owner);
+}
+
+/* <summary> Release the controller through the container. </summary>
+ * <description> May destroy the entire aggregate. </description> */
+static uint32_t ECOCALLMETHOD SimpsonContainerRelease(IEcoConnectionPointContainer* me) {
+    if (me == 0) {
+        return (uint32_t)ERR_ECO_POINTER;
+    }
+    return CEcoIntegralSimpson_5BC4E3DF_Release((IEcoAdvancedMath*)((SimpsonContainerSlot*)me)->owner);
+}
+
+/* <summary> Enumerate the integrator's point. </summary>
+ * <description> The enumerator owns a point reference and therefore keeps its source alive. </description> */
+static int16_t ECOCALLMETHOD SimpsonEnumPoints(IEcoConnectionPointContainer* me, IEcoEnumConnectionPoints** out) {
+    CEcoIntegralSimpson_5BC4E3DF* object = 0;
+    if (out == 0) {
+        return ERR_ECO_POINTER;
+    }
+    *out = 0;
+    if (me == 0) {
+        return ERR_ECO_POINTER;
+    }
+    object = ((SimpsonContainerSlot*)me)->owner;
+    return createCEcoIntegralSimpsonEnumConnectionPoints(object->m_pIMem, object->m_pConnectionPoint, 0, out);
+}
+
+/* <summary> Find the outgoing Simpson events point. </summary>
+ * <description> Returns one acquired reference for the matching IID. </description> */
+static int16_t ECOCALLMETHOD SimpsonFindPoint(IEcoConnectionPointContainer* me, const UGUID* iid, IEcoConnectionPoint** out) {
+    CEcoIntegralSimpson_5BC4E3DF* object = 0;
+    if (out == 0) {
+        return ERR_ECO_POINTER;
+    }
+    *out = 0;
+    if (me == 0 || iid == 0) {
+        return ERR_ECO_POINTER;
+    }
+    if (!IsEqualUGUID(iid, &IID_IEcoIntegralSimpsonEvents)) {
+        return ERR_ECO_NOINTERFACE;
+    }
+    object = ((SimpsonContainerSlot*)me)->owner;
+    *out = object->m_pConnectionPoint;
+    object->m_pConnectionPoint->pVTbl->AddRef(object->m_pConnectionPoint);
+    return ERR_ECO_SUCCESS;
+}
+
+typedef enum SimpsonEventKind {
+    SimpsonStarted,
+    SimpsonRefined,
+    SimpsonFinished
+} SimpsonEventKind;
+
+typedef struct SimpsonEvent {
+    SimpsonEventKind kind;
+    uint16_t precision;
+    uint32_t step;
+    uint32_t intervals;
+    int16_t status;
+    long double left;
+    long double middle;
+    long double right;
+    long double epsabs;
+    long double epsrel;
+    long double value;
+    long double error;
+} SimpsonEvent;
+
+/* <summary> Notify the current receiver snapshot. </summary>
+ * <description> Handler return codes are ignored; Unadvise changes only later snapshots. </description> */
+static void SimpsonFireEvent(CEcoIntegralSimpson_5BC4E3DF* object, const SimpsonEvent* event) {
+    IEcoEnumConnections* enumerator = 0;
+    IEcoIntegralSimpsonEvents* events = 0;
+    EcoConnectionData connection;
+    int16_t status = ERR_ECO_FAIL;
+    status = object->m_pConnectionPoint->pVTbl->EnumConnections(object->m_pConnectionPoint, &enumerator);
+    if (status != ERR_ECO_SUCCESS || enumerator == 0) {
+        return;
+    }
+    while (enumerator->pVTbl->Next(enumerator, 1, &connection, 0) == ERR_ECO_SUCCESS) {
+        events = 0;
+        status = connection.pUnk->pVTbl->QueryInterface(connection.pUnk, &IID_IEcoIntegralSimpsonEvents, (voidptr_t*)&events);
+        if (status == ERR_ECO_SUCCESS && events != 0) {
+            if (event->kind == SimpsonStarted) {
+                events->pVTbl->OnIntegrationStarted(events, object->m_pIUnkOuter, event->precision,
+                    event->left, event->right, event->epsabs, event->epsrel);
+            }
+            else if (event->kind == SimpsonRefined) {
+                events->pVTbl->OnIntervalRefined(events, object->m_pIUnkOuter, event->step, event->intervals,
+                    event->left, event->middle, event->right, event->value, event->error);
+            }
+            else {
+                events->pVTbl->OnIntegrationFinished(events, object->m_pIUnkOuter, event->status, event->value, event->error);
+            }
+            events->pVTbl->Release(events);
+        }
+        connection.pUnk->pVTbl->Release(connection.pUnk);
+    }
+    enumerator->pVTbl->Release(enumerator);
+}
+
 /* <summary> Compute the absolute value. </summary>
  * <description> Arithmetic only; no libc calls. </description> */
 static double_t CEcoIntegralSimpson_5BC4E3DF_D_Abs(double_t value) {
@@ -302,6 +428,7 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integral(IEcoAdvancedM
     double_t left = (double_t)0;
     double_t right = (double_t)0;
     double_t swap = (double_t)0;
+    SimpsonEvent event;
     uint32_t count = 1;
     uint32_t worst = 0;
     uint32_t i = 0;
@@ -314,9 +441,23 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integral(IEcoAdvancedM
         epsabs < (double_t)0 || epsrel < (double_t)0 || (epsabs == (double_t)0 && epsrel == (double_t)0)) {
         return ERR_ECO_INVALIDARG;
     }
+    me->pVTbl->AddRef(me);
+    event.kind = SimpsonStarted;
+    event.precision = ECO_INTEGRAL_DOUBLE;
+    event.left = (long double)a;
+    event.right = (long double)b;
+    event.epsabs = (long double)epsabs;
+    event.epsrel = (long double)epsrel;
+    SimpsonFireEvent(object, &event);
     if (a == b) {
         *result = (double_t)0;
         *error = (double_t)0;
+        event.kind = SimpsonFinished;
+        event.status = ERR_ECO_SUCCESS;
+        event.value = (long double)0;
+        event.error = (long double)0;
+        SimpsonFireEvent(object, &event);
+        me->pVTbl->Release(me);
         return ERR_ECO_SUCCESS;
     }
     if (a > b) {
@@ -325,7 +466,6 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integral(IEcoAdvancedM
         b = swap;
         reverse = 1;
     }
-    me->pVTbl->AddRef(me);
     intervals = (CEcoIntegralSimpson_5BC4E3DF_D_Interval*)object->m_pIMem->pVTbl->Alloc(object->m_pIMem,
         (uint32_t)(4096*sizeof(CEcoIntegralSimpson_5BC4E3DF_D_Interval)));
     if (intervals == 0) {
@@ -349,6 +489,18 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integral(IEcoAdvancedM
         if (!CEcoIntegralSimpson_5BC4E3DF_D_Finite(q) || !CEcoIntegralSimpson_5BC4E3DF_D_Finite(estimate)) {
             status = ERR_ECO_FAIL;
             break;
+        }
+        /* These sums include the last completed split; its bounds are still saved. */
+        if (count > 1) {
+            event.kind = SimpsonRefined;
+            event.step = count-1;
+            event.intervals = count;
+            event.left = (long double)left;
+            event.middle = (long double)midpoint;
+            event.right = (long double)right;
+            event.value = (long double)(reverse ? -q : q);
+            event.error = (long double)estimate;
+            SimpsonFireEvent(object, &event);
         }
         relative = epsrel*CEcoIntegralSimpson_5BC4E3DF_D_Abs(q);
         if (!CEcoIntegralSimpson_5BC4E3DF_D_Finite(relative)) {
@@ -391,6 +543,11 @@ Release:
     if (intervals != 0) {
         object->m_pIMem->pVTbl->Free(object->m_pIMem, intervals);
     }
+    event.kind = SimpsonFinished;
+    event.status = status;
+    event.value = status == ERR_ECO_SUCCESS ? (long double)(reverse ? -q : q) : (long double)0;
+    event.error = status == ERR_ECO_SUCCESS ? (long double)estimate : (long double)0;
+    SimpsonFireEvent(object, &event);
     me->pVTbl->Release(me);
     return status;
 }
@@ -482,6 +639,7 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integralf(IEcoAdvanced
     float_t left = (float_t)0;
     float_t right = (float_t)0;
     float_t swap = (float_t)0;
+    SimpsonEvent event;
     uint32_t count = 1;
     uint32_t worst = 0;
     uint32_t i = 0;
@@ -494,9 +652,23 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integralf(IEcoAdvanced
         epsabs < (float_t)0 || epsrel < (float_t)0 || (epsabs == (float_t)0 && epsrel == (float_t)0)) {
         return ERR_ECO_INVALIDARG;
     }
+    me->pVTbl->AddRef(me);
+    event.kind = SimpsonStarted;
+    event.precision = ECO_INTEGRAL_FLOAT;
+    event.left = (long double)a;
+    event.right = (long double)b;
+    event.epsabs = (long double)epsabs;
+    event.epsrel = (long double)epsrel;
+    SimpsonFireEvent(object, &event);
     if (a == b) {
         *result = (float_t)0;
         *error = (float_t)0;
+        event.kind = SimpsonFinished;
+        event.status = ERR_ECO_SUCCESS;
+        event.value = (long double)0;
+        event.error = (long double)0;
+        SimpsonFireEvent(object, &event);
+        me->pVTbl->Release(me);
         return ERR_ECO_SUCCESS;
     }
     if (a > b) {
@@ -505,7 +677,6 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integralf(IEcoAdvanced
         b = swap;
         reverse = 1;
     }
-    me->pVTbl->AddRef(me);
     intervals = (CEcoIntegralSimpson_5BC4E3DF_F_Interval*)object->m_pIMem->pVTbl->Alloc(object->m_pIMem,
         (uint32_t)(4096*sizeof(CEcoIntegralSimpson_5BC4E3DF_F_Interval)));
     if (intervals == 0) {
@@ -529,6 +700,18 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integralf(IEcoAdvanced
         if (!CEcoIntegralSimpson_5BC4E3DF_F_Finite(q) || !CEcoIntegralSimpson_5BC4E3DF_F_Finite(estimate)) {
             status = ERR_ECO_FAIL;
             break;
+        }
+        /* These sums include the last completed split; its bounds are still saved. */
+        if (count > 1) {
+            event.kind = SimpsonRefined;
+            event.step = count-1;
+            event.intervals = count;
+            event.left = (long double)left;
+            event.middle = (long double)midpoint;
+            event.right = (long double)right;
+            event.value = (long double)(reverse ? -q : q);
+            event.error = (long double)estimate;
+            SimpsonFireEvent(object, &event);
         }
         relative = epsrel*CEcoIntegralSimpson_5BC4E3DF_F_Abs(q);
         if (!CEcoIntegralSimpson_5BC4E3DF_F_Finite(relative)) {
@@ -571,6 +754,11 @@ Release:
     if (intervals != 0) {
         object->m_pIMem->pVTbl->Free(object->m_pIMem, intervals);
     }
+    event.kind = SimpsonFinished;
+    event.status = status;
+    event.value = status == ERR_ECO_SUCCESS ? (long double)(reverse ? -q : q) : (long double)0;
+    event.error = status == ERR_ECO_SUCCESS ? (long double)estimate : (long double)0;
+    SimpsonFireEvent(object, &event);
     me->pVTbl->Release(me);
     return status;
 }
@@ -662,6 +850,7 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integrall(IEcoAdvanced
     long double left = (long double)0;
     long double right = (long double)0;
     long double swap = (long double)0;
+    SimpsonEvent event;
     uint32_t count = 1;
     uint32_t worst = 0;
     uint32_t i = 0;
@@ -674,9 +863,23 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integrall(IEcoAdvanced
         epsabs < (long double)0 || epsrel < (long double)0 || (epsabs == (long double)0 && epsrel == (long double)0)) {
         return ERR_ECO_INVALIDARG;
     }
+    me->pVTbl->AddRef(me);
+    event.kind = SimpsonStarted;
+    event.precision = ECO_INTEGRAL_LONG_DOUBLE;
+    event.left = (long double)a;
+    event.right = (long double)b;
+    event.epsabs = (long double)epsabs;
+    event.epsrel = (long double)epsrel;
+    SimpsonFireEvent(object, &event);
     if (a == b) {
         *result = (long double)0;
         *error = (long double)0;
+        event.kind = SimpsonFinished;
+        event.status = ERR_ECO_SUCCESS;
+        event.value = (long double)0;
+        event.error = (long double)0;
+        SimpsonFireEvent(object, &event);
+        me->pVTbl->Release(me);
         return ERR_ECO_SUCCESS;
     }
     if (a > b) {
@@ -685,7 +888,6 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integrall(IEcoAdvanced
         b = swap;
         reverse = 1;
     }
-    me->pVTbl->AddRef(me);
     intervals = (CEcoIntegralSimpson_5BC4E3DF_L_Interval*)object->m_pIMem->pVTbl->Alloc(object->m_pIMem,
         (uint32_t)(4096*sizeof(CEcoIntegralSimpson_5BC4E3DF_L_Interval)));
     if (intervals == 0) {
@@ -709,6 +911,18 @@ static int16_t ECOCALLMETHOD CEcoIntegralSimpson_5BC4E3DF_integrall(IEcoAdvanced
         if (!CEcoIntegralSimpson_5BC4E3DF_L_Finite(q) || !CEcoIntegralSimpson_5BC4E3DF_L_Finite(estimate)) {
             status = ERR_ECO_FAIL;
             break;
+        }
+        /* These sums include the last completed split; its bounds are still saved. */
+        if (count > 1) {
+            event.kind = SimpsonRefined;
+            event.step = count-1;
+            event.intervals = count;
+            event.left = (long double)left;
+            event.middle = (long double)midpoint;
+            event.right = (long double)right;
+            event.value = (long double)(reverse ? -q : q);
+            event.error = (long double)estimate;
+            SimpsonFireEvent(object, &event);
         }
         relative = epsrel*CEcoIntegralSimpson_5BC4E3DF_L_Abs(q);
         if (!CEcoIntegralSimpson_5BC4E3DF_L_Finite(relative)) {
@@ -751,6 +965,11 @@ Release:
     if (intervals != 0) {
         object->m_pIMem->pVTbl->Free(object->m_pIMem, intervals);
     }
+    event.kind = SimpsonFinished;
+    event.status = status;
+    event.value = status == ERR_ECO_SUCCESS ? (long double)(reverse ? -q : q) : (long double)0;
+    event.error = status == ERR_ECO_SUCCESS ? (long double)estimate : (long double)0;
+    SimpsonFireEvent(object, &event);
     me->pVTbl->Release(me);
     return status;
 }
@@ -782,6 +1001,10 @@ static int16_t ECOCALLMETHOD initCEcoIntegralSimpson_5BC4E3DF(CEcoIntegralSimpso
     if (status == 0 && (object->m_pIX == 0 || object->m_pIY == 0)) {
         return ERR_ECO_FAIL;
     }
+    if (status == ERR_ECO_SUCCESS) {
+        status = createCEcoIntegralSimpsonConnectionPoint(object->m_pIMem, object->m_pIUnkOuter,
+            (IEcoConnectionPointContainer*)&object->m_container, &object->m_pConnectionPoint);
+    }
     return status;
 }
 
@@ -794,6 +1017,7 @@ static int16_t ECOCALLMETHOD createCEcoIntegralSimpson_5BC4E3DF(CEcoIntegralSimp
     object->m_unknown.owner = object;
     object->m_x.owner = object;
     object->m_y.owner = object;
+    object->m_container.owner = object;
     object->m_pIUnkOuter = outer != 0 ? outer : (IEcoUnknown*)&object->m_unknown;
     return ERR_ECO_SUCCESS;
 }
@@ -806,6 +1030,7 @@ static void ECOCALLMETHOD deleteCEcoIntegralSimpson_5BC4E3DF(CEcoIntegralSimpson
         return;
     }
     memory = object->m_pIMem;
+    deleteCEcoIntegralSimpsonConnectionPoint(object->m_pConnectionPoint);
     if (object->m_pIY != 0) {
         object->m_pIY->pVTbl->Release(object->m_pIY);
     }
@@ -833,16 +1058,21 @@ IEcoAdvancedMathVTbl g_x667182A35F5C4F909244C763139ED855VTbl_5BC4E3DF = {
 static IEcoUnknownVTbl g_SimpsonND = {SimpsonNDQuery, SimpsonNDAddRef, SimpsonNDRelease};
 static IEcoCalculatorXVTbl g_SimpsonX = {SimpsonXQuery, SimpsonXAddRef, SimpsonXRelease, SimpsonAddition, SimpsonSubtraction};
 static IEcoCalculatorYVTbl g_SimpsonY = {SimpsonYQuery, SimpsonYAddRef, SimpsonYRelease, SimpsonMultiplication, SimpsonDivision};
+static IEcoConnectionPointContainerVTbl g_SimpsonContainer = {
+    SimpsonContainerQuery, SimpsonContainerAddRef, SimpsonContainerRelease, SimpsonEnumPoints, SimpsonFindPoint
+};
 
 CEcoIntegralSimpson_5BC4E3DF g_xCEcoIntegralSimpson_5BC4E3DF = {
     &g_x667182A35F5C4F909244C763139ED855VTbl_5BC4E3DF,
     {&g_SimpsonND, 0},
     {&g_SimpsonX, 0},
     {&g_SimpsonY, 0},
+    {&g_SimpsonContainer, 0},
     initCEcoIntegralSimpson_5BC4E3DF,
     createCEcoIntegralSimpson_5BC4E3DF,
     deleteCEcoIntegralSimpson_5BC4E3DF,
     1, /* m_cRef */
+    0,
     0,
     0,
     0,

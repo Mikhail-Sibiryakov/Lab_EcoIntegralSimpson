@@ -13,6 +13,7 @@
 #include "IdEcoMemoryManager1.h"
 #include "IEcoCalculatorX.h"
 #include "IEcoCalculatorY.h"
+#include "IEcoConnectionPointContainer.h"
 
 typedef struct CEcoIntegralSimpson_5BC4E3DF* CEcoIntegralSimpson_5BC4E3DFPtr_t;
 
@@ -31,12 +32,18 @@ typedef struct SimpsonYSlot {
     CEcoIntegralSimpson_5BC4E3DFPtr_t owner;
 } SimpsonYSlot;
 
+typedef struct SimpsonContainerSlot {
+    IEcoConnectionPointContainerVTbl* vtbl;
+    CEcoIntegralSimpson_5BC4E3DFPtr_t owner;
+} SimpsonContainerSlot;
+
 typedef struct CEcoIntegralSimpson_5BC4E3DF {
 
     IEcoAdvancedMathVTbl* m_pVTblIEcoAdvancedMath;
     SimpsonUnknownSlot m_unknown;
     SimpsonXSlot m_x;
     SimpsonYSlot m_y;
+    SimpsonContainerSlot m_container;
 
     int16_t (ECOCALLMETHOD *Init)(/*in*/ CEcoIntegralSimpson_5BC4E3DFPtr_t pCMe, /* in */ IEcoUnknownPtr_t pIUnkSystem);
     int16_t (ECOCALLMETHOD *Create)(/*in*/ CEcoIntegralSimpson_5BC4E3DFPtr_t pCMe, /* in */ IEcoUnknownPtr_t pIUnkSystem, /* in */ IEcoUnknownPtr_t pIUnkOuter);
@@ -52,6 +59,8 @@ typedef struct CEcoIntegralSimpson_5BC4E3DF {
     IEcoUnknown* m_pIUnkOuter;
     IEcoCalculatorX* m_pIX;
     IEcoCalculatorY* m_pIY;
+    /* Internal point pointer; acquired CP references retain the controller. */
+    IEcoConnectionPoint* m_pConnectionPoint;
 
 } CEcoIntegralSimpson_5BC4E3DF;
 

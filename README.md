@@ -1,3 +1,70 @@
+# Лабораторная работа №3 — события и точки подключения ACOM
+
+Автор: Михаил Сибиряков, группа 24ТИДИ.
+
+EcoIntegralSimpson дополнен исходящим интерфейсом
+`IEcoIntegralSimpsonEvents`: начало интегрирования, уточнение разбиения и
+завершение. Событие уточнения передаёт выбранный подотрезок и общие результат
+и оценку погрешности после пересчёта. Алгоритм Симпсона и прежний математический
+интерфейс сохранены.
+
+Клиент создаёт два экземпляра интегратора напрямую через шину Eco и два
+приёмника: журнал и статистику. Каждый приёмник подписан на оба источника —
+четыре подключения. Источник различается по каноническому `IEcoUnknown`.
+Демонстрация показывает адаптивные шаги и выборочную отписку одной связи.
+
+## Изменения третьей работы
+
+| Файлы | Назначение |
+|---|---|
+| [IEcoIntegralSimpsonEvents.h](Components/EcoIntegralSimpson/SharedFiles/IEcoIntegralSimpsonEvents.h) | Публичный интерфейс трёх событий; числовые поля `long double`. |
+| [CEcoIntegralSimpson.c](Components/EcoIntegralSimpson/SourceFiles/CEcoIntegralSimpson.c) | Доработан: контейнер точек подключения и события в трёх методах интегрирования. |
+| [CEcoIntegralSimpsonConnectionPoint.c](Components/EcoIntegralSimpson/SourceFiles/CEcoIntegralSimpsonConnectionPoint.c) | `Advise`, `Unadvise` и владение подключёнными приёмниками. |
+| [CEcoIntegralSimpsonEnumConnectionPoints.c](Components/EcoIntegralSimpson/SourceFiles/CEcoIntegralSimpsonEnumConnectionPoints.c), [CEcoIntegralSimpsonEnumConnections.c](Components/EcoIntegralSimpson/SourceFiles/CEcoIntegralSimpsonEnumConnections.c) | Перечисление точек и снимков подключений. |
+| [EcoLab3.c](UnitTestFiles/SourceFiles/EcoLab3.c), [CEcoIntegralSimpsonSink.c](UnitTestFiles/SourceFiles/CEcoIntegralSimpsonSink.c) | Клиент схемы 2×2, журнал и статистика. |
+| [Lab3TestInitialization.c](UnitTestFiles/SourceFiles/Lab3TestInitialization.c) | Инициализация компонентов нового клиента. |
+| [MakefileLab3](AssemblyFiles/Linux/gcc_v132/MakefileLab3), [build.sh](AssemblyFiles/Linux/gcc_v132/build.sh) | Добавлен MakefileLab3 и обновлён build.sh: сборка, запуск и общая проверка. |
+
+Внутренние заголовки находятся в соответствующих `HeaderFiles`, публичный
+событийный контракт — в `SharedFiles`. Результаты и журналы создаются в
+`BuildFiles/`.
+
+[EcoLab3_Report.pdf](EcoLab3_Report.pdf) — описание событий, схемы подключения,
+сценарии и анализ результатов третьей работы.
+
+## Сборка и запуск
+
+Нужны Linux x86_64, Eco.Framework в `~/Dev/Eco.Framework` и toolchain в
+`~/Dev/toolchain`. Для полной проверки нужны также Python 3, mpmath и binutils.
+Из корня проекта:
+
+~~~bash
+./AssemblyFiles/Linux/gcc_v132/build.sh lab3-test
+./AssemblyFiles/Linux/gcc_v132/build.sh lab3-run
+./AssemblyFiles/Linux/gcc_v132/build.sh verify
+~~~
+
+`lab3-test` собирает событийный клиент и сохраняет протокол в
+`BuildFiles/verification/lab3-unit-test.log`; `lab3-run` выводит полную
+демонстрацию. `verify` включает новые событийные сценарии и регрессию
+предыдущих работ.
+
+Фактический итог событийного клиента:
+
+~~~text
+Lab3 summary: 12 PASS, 0 FAIL
+~~~
+
+Полная `verify` также прошла: 135 проверок интегратора, 55 условий клиента
+второй работы и 25 переходов интерфейсов, 3 Python-теста, 30/30 сравнений
+с mpmath. Аудит 14 собственных объектных файлов не выявил вызовов libc.
+
+## Подтверждение запуска
+
+![Результаты третьей лабораторной и регрессионных проверок](evidence3.png)
+
+---
+
 # Лабораторная работа №2 — включение и агрегирование ACOM
 
 Автор: Михаил Сибиряков, группа 24ТИДИ.

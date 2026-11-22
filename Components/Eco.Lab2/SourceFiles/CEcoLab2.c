@@ -1,13 +1,13 @@
 ﻿/*
  * <character encoding> Cyrillic (UTF-8 with signature) - Codepage 65001 </character encoding>
  * <summary> Eco.Lab2 aggregation and containment. </summary>
- * <description> C/X and E/Y wrappers with directly exposed aggregated AdvancedMath. </description>
+ * <description> A/C X and E/Y wrappers with directly exposed aggregated AdvancedMath. </description>
  * <reference> Eco.AI.Promts/Templates/CROOT.c; docs/lab2/DESIGN.md </reference>
  * <author> Copyright (c) 2026 Mikhail Sibiryakov. All rights reserved. </author>
  */
 #include "CEcoLab2.h"
 #include "IEcoInterfaceBus1.h"
-#include "IdEcoCalculatorCCompat.h"
+#include "IdEcoCalculatorC.h"
 #include "IdEcoCalculatorE.h"
 #include "IdEcoIntegralSimpson.h"
 
@@ -113,7 +113,7 @@ static int16_t ECOCALLMETHOD Lab2XQuery(IEcoCalculatorX* me, const UGUID* iid, v
 }
 
 /* <summary> Retain the aggregate through X. </summary>
- * <description> Contained C's count stays private. </description> */
+ * <description> The contained calculator's count stays private. </description> */
 static uint32_t ECOCALLMETHOD Lab2XAddRef(IEcoCalculatorX* me) {
     if (me == 0) {
         return (uint32_t)ERR_ECO_POINTER;
@@ -130,7 +130,7 @@ static uint32_t ECOCALLMETHOD Lab2XRelease(IEcoCalculatorX* me) {
     return Lab2Release((IEcoLab2*)((Lab2XSlot*)me)->owner);
 }
 
-/* <summary> Add through included C. </summary>
+/* <summary> Add through the included A/C implementation. </summary>
  * <description> Preserves int32_t return values. </description> */
 static int32_t ECOCALLMETHOD Lab2Addition(IEcoCalculatorX* me, int16_t a, int16_t b) {
     CEcoLab2_47E653D2* object = 0;
@@ -141,7 +141,7 @@ static int32_t ECOCALLMETHOD Lab2Addition(IEcoCalculatorX* me, int16_t a, int16_
     return object->m_pIX->pVTbl->Addition(object->m_pIX, a, b);
 }
 
-/* <summary> Subtract through included C. </summary>
+/* <summary> Subtract through the included A/C implementation. </summary>
  * <description> Keeps the original X contract. </description> */
 static int16_t ECOCALLMETHOD Lab2Subtraction(IEcoCalculatorX* me, int16_t a, int16_t b) {
     CEcoLab2_47E653D2* object = 0;
@@ -220,7 +220,7 @@ static int16_t ECOCALLMETHOD Lab2Init(CEcoLab2_47E653D2Ptr_t object, IEcoUnknown
     if (status != 0 || bus == 0) {
         return ERR_ECO_NOBUS;
     }
-    status = bus->pVTbl->QueryComponent(bus, &CID_EcoCalculatorC_Lab2, 0, &IID_IEcoCalculatorX, (voidptr_t*)&object->m_pIX);
+    status = bus->pVTbl->QueryComponent(bus, &CID_EcoCalculatorC, 0, &IID_IEcoCalculatorX, (voidptr_t*)&object->m_pIX);
     if (status == 0 && object->m_pIX != 0) {
         status = bus->pVTbl->QueryComponent(bus, &CID_EcoCalculatorE, 0, &IID_IEcoCalculatorY, (voidptr_t*)&object->m_pIY);
     }
