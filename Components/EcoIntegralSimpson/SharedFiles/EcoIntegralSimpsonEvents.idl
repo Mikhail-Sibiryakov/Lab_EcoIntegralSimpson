@@ -1,0 +1,11 @@
+﻿import "IEcoBase1.h";
+[object, uguid(67EDF6B2-23EF-4CC6-BFD7-0EE619F222B6)]
+interface IEcoIntegralSimpsonEvents : IEcoUnknown {
+    int16_t OnIntegrationStarted([in] IEcoUnknown* source, [in] uint16_t precision,
+        [in] long double a, [in] long double b, [in] long double epsabs, [in] long double epsrel);
+    int16_t OnIntervalRefined([in] IEcoUnknown* source, [in] uint32_t step, [in] uint32_t intervals,
+        [in] long double left, [in] long double middle, [in] long double right,
+        [in] long double value, [in] long double error);
+    int16_t OnIntegrationFinished([in] IEcoUnknown* source, [in] int16_t status,
+        [in] long double value, [in] long double error);
+};

@@ -1,0 +1,18 @@
+# Share the existing SDK paths and educational dependency build rules.
+include MakefileLab2
+.DEFAULT_GOAL := lab3
+LAB3_OBJ := $(OUT)/EcoLab3.o $(OUT)/CEcoIntegralSimpsonSink.o $(OUT)/Lab3TestInitialization.o
+.PHONY: lab3 lab3-clean
+lab3: $(OUT)/EcoLab3UnitTest
+
+$(LAB3_OBJ): $(OUT)/%.o: $(ROOT)/UnitTestFiles/SourceFiles/%.c
+	@mkdir -p $(@D)
+	$(CC_c) $(FLAGS) -MMD -MP -c $< -o $@
+
+$(OUT)/EcoLab3UnitTest: $(LAB3_OBJ) $(OUT)/Lab2TestRegistration.o $(OUT)/libInsideACOM.a $(OUT)/libBA973067BA954E8FA50BDDE55BC4E3DF.a
+	$(CC_c) -o $@ $(LAB3_OBJ) $(OUT)/Lab2TestRegistration.o -L$(OUT) $(SDK_LIBDIRS) -Wl,--start-group -lBA973067BA954E8FA50BDDE55BC4E3DF -lInsideACOM $(SDK_LIBS) -Wl,--end-group
+
+lab3-clean:
+	rm -f $(LAB3_OBJ) $(LAB3_OBJ:.o=.d) $(OUT)/EcoLab3UnitTest
+
+-include $(LAB3_OBJ:.o=.d)

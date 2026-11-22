@@ -8,6 +8,9 @@ expected = {
     'CEcoIntegralSimpson.o', 'CEcoIntegralSimpsonFactory.o', 'EcoIntegralSimpson.o',
     'CEcoLab2.o', 'CEcoLab2Factory.o', 'EcoLab2.o',
     'Lab2TestRegistration.o', 'Lab2TestInitialization.o',
+    'CEcoIntegralSimpsonConnectionPoint.o', 'CEcoIntegralSimpsonEnumConnections.o',
+    'CEcoIntegralSimpsonEnumConnectionPoints.o',
+    'EcoLab3.o', 'CEcoIntegralSimpsonSink.o', 'Lab3TestInitialization.o',
 }
 allowed = {
     'GetIEcoComponentFactoryPtr_BA973067BA954E8FA50BDDE55BC4E3DF',
@@ -20,6 +23,12 @@ allowed = {
     'GetIEcoComponentFactoryPtr_872FEF1DE3314B87AD44D1E7C232C2F0',
     'Lab2RegisterCalculators',
     'Lab2InitializeComponents',
+    'createCEcoIntegralSimpsonConnectionPoint',
+    'deleteCEcoIntegralSimpsonConnectionPoint',
+    'createCEcoIntegralSimpsonEnumConnections',
+    'createCEcoIntegralSimpsonEnumConnectionPoints',
+    'Lab3InitializeComponents', 'Lab3CreateSink',
+    'Lab3Print', 'Lab3PrintCount', 'Lab3PrintReal',
 }
 objects = sorted(directory.glob('*.o'))
 if {path.name for path in objects} != expected:

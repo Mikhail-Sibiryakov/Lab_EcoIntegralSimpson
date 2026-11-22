@@ -44,9 +44,14 @@ case "${1:-build}" in
         exec "$eco_loader" --library-path "$eco_library_path" \
             "$eco_output_dir/EcoLab2UnitTest"
         ;;
+    lab3-run)
+        exec "$eco_loader" --library-path "$eco_library_path" \
+            "$eco_output_dir/EcoLab3UnitTest"
+        ;;
     clean)
         eco_integral_make -f Makefile clean TARGET=1 ARCH=x86_64 DEBUG=0
         eco_integral_make -f MakefileExe clean TARGET=1 ARCH=x86_64 DEBUG=0
+        eco_make -f MakefileLab3 lab3-clean
         eco_make -f MakefileLab2 clean
         exit
         ;;
@@ -59,11 +64,21 @@ case "${1:-build}" in
         tail -n 3 "$eco_check_dir/lab2-unit-test.log"
         exit
         ;;
+    lab3-test)
+        eco_make -f MakefileLab2 calculators
+        eco_integral_make -f Makefile TARGET=1 ARCH=x86_64 DEBUG=0
+        eco_make -f MakefileLab3 lab3
+        mkdir -p "$eco_check_dir"
+        "$eco_loader" --library-path "$eco_library_path" \
+            "$eco_output_dir/EcoLab3UnitTest" > "$eco_check_dir/lab3-unit-test.log"
+        tail -n 3 "$eco_check_dir/lab3-unit-test.log"
+        exit
+        ;;
     build|test|verify)
         eco_action=${1:-build}
         ;;
     *)
-        echo 'Usage: build.sh [build|run|test|lab2-test|lab2-run|verify|clean]' >&2
+        echo 'Usage: build.sh [build|run|test|lab2-test|lab2-run|lab3-test|lab3-run|verify|clean]' >&2
         exit 2
         ;;
 esac
@@ -72,6 +87,7 @@ eco_make -f MakefileLab2 calculators
 eco_integral_make -f Makefile TARGET=1 ARCH=x86_64 DEBUG=0
 eco_integral_make -f MakefileExe TARGET=1 ARCH=x86_64 DEBUG=0
 eco_make -f MakefileLab2 all
+eco_make -f MakefileLab3 lab3
 if [ "$eco_action" = build ]; then
     exit
 fi
@@ -83,6 +99,9 @@ if [ "$eco_action" = verify ]; then
     "$eco_loader" --library-path "$eco_library_path" \
         "$eco_output_dir/EcoLab2UnitTest" > "$eco_check_dir/lab2-unit-test.log"
     tail -n 3 "$eco_check_dir/lab2-unit-test.log"
+    "$eco_loader" --library-path "$eco_library_path" \
+        "$eco_output_dir/EcoLab3UnitTest" > "$eco_check_dir/lab3-unit-test.log"
+    tail -n 3 "$eco_check_dir/lab3-unit-test.log"
     python3 "$eco_project_dir/UnitTestFiles/test_reference.py"
     python3 "$eco_project_dir/UnitTestFiles/compare_reference.py"
     python3 "$eco_project_dir/UnitTestFiles/check_objects.py"

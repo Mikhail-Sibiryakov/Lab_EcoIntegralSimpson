@@ -122,7 +122,10 @@ LIBS = -lgcc
 
 # --- Source and Object Files ---
 SRC = $(COMPONENT_ROOT)/SourceFiles/CEcoIntegralSimpson.c \
-      $(COMPONENT_ROOT)/SourceFiles/CEcoIntegralSimpsonFactory.c
+      $(COMPONENT_ROOT)/SourceFiles/CEcoIntegralSimpsonFactory.c \
+      $(COMPONENT_ROOT)/SourceFiles/CEcoIntegralSimpsonConnectionPoint.c \
+      $(COMPONENT_ROOT)/SourceFiles/CEcoIntegralSimpsonEnumConnectionPoints.c \
+      $(COMPONENT_ROOT)/SourceFiles/CEcoIntegralSimpsonEnumConnections.c
 
 OBJ = $(addprefix $(OUT_DIR)/,$(notdir $(SRC:.c=.o)))
 
